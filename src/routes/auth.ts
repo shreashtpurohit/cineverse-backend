@@ -20,13 +20,13 @@ const loginSchema = z.object({
 function signTokens(user: { id: string; email: string; role: string; name: string }) {
   const accessToken = jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name },
-    process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+    process.env.JWT_SECRET as string,
+    { expiresIn: 900 }
   )
   const refreshToken = jwt.sign(
     { id: user.id },
-    process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    process.env.JWT_REFRESH_SECRET as string,
+    { expiresIn: 604800 }
   )
   return { accessToken, refreshToken }
 }
