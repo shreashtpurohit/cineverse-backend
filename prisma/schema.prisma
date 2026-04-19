@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews       Review[]
+  watchlist     WatchlistItem[]
+  reviewLikes   ReviewLike[]
+  notifications Notification[]
+  followers     Follow[]        @relation("following")
+  following     Follow[]        @relation("follower")
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Movie {
+  id          String   @id @default(cuid())
+  tmdbId      Int      @unique
+  title       String
+  overview    String?
+  posterPath  String?
+  backdropPath String?
+  releaseDate String?
+  year        Int?
+  rating      Float?   @default(0)
+  voteCount   Int?     @default(0)
+  genres      String[] // stored as array of genre names
+  director    String?
+  cast        String[] // stored as array of actor names
+  color       String?  // accent color for UI
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviews   Review[]
+  watchlist WatchlistItem[]
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  content   String
+  rating    Int      // 1-5 stars
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likes ReviewLike[]
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+}
+
+enum WatchStatus {
+  PLAN_TO_WATCH
+  WATCHING
+  WATCHED
+  DROPPED
+}
+
+model WatchlistItem {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieId   String
+  movie     Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  status    WatchStatus @default(PLAN_TO_WATCH)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([userId, movieId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+enum NotificationType {
+  REVIEW_LIKE
+  NEW_FOLLOWER
+  NEW_REVIEW
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  data      Json?            // extra data like reviewId, fromUserId
+  createdAt DateTime         @default(now())
+}
