@@ -9,13 +9,13 @@ const TMDB_KEY = process.env.TMDB_API_KEY || ''
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w500'
 
 // Generic TMDB fetch helper
-async function tmdbFetch(path: string, params: Record<string, string> = {}) {
+async function tmdbFetch(path: string, params: Record<string, string> = {}): Promise<any> {
   const url = new URL(`${TMDB_BASE}${path}`)
   url.searchParams.set('api_key', TMDB_KEY)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
   const res = await fetch(url.toString())
   if (!res.ok) throw new Error(`TMDB error: ${res.status}`)
-  return res.json()
+  return res.json() as Promise<any>
 }
 
 // Map TMDB movie to our format
